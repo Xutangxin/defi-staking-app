@@ -1,14 +1,21 @@
 import { Button, notification } from "antd";
 import { useEffect, useState } from "react";
-import { useAccount, useBalance } from "wagmi";
-import { usdcContract } from "../constants";
-import { formatUnits } from "viem";
+import {
+  useAccount,
+  useBalance,
+  useReadContract,
+  useWriteContract,
+} from "wagmi";
+import { poolContract, usdcContract } from "../constants";
+import { formatUnits, parseUnits } from "viem";
+import { ERC20_ABI, POOL_ABI } from "../abi";
+import { InputNumber } from "antd";
 
 export default function Vault() {
   const [api, contextHolder] = notification.useNotification();
 
   const { address } = useAccount();
-  const [amount, setAmt] = useState("");
+  const [amount, setAmount] = useState(1);
 
   // 读代币余额
   const { data = { value: 0n, decimals: 18 }, error } = useBalance({
@@ -17,6 +24,15 @@ export default function Vault() {
     enabled: !!address,
   });
   const bal = `${formatUnits(data.value, data.decimals)} ${data.symbol}`;
+  const dec = data.decimals;
+
+  // 读已授权额度
+  const { data: allowance } = useReadContract({
+    address: usdcContract,
+    abi: ERC20_ABI,
+    functionName: "allowance",
+    args: [address, poolContract],
+  });
 
   useEffect(() => {
     if (error) {
@@ -27,24 +43,80 @@ export default function Vault() {
     }
   }, [error]);
 
-  const needApprove = false;
+  const {
+    writeContract: writeERC20,
+    error: tokenError,
+    isPending: tokenPending,
+    isSuccess: tokenSuccess,
+  } = useWriteContract();
+  const {
+    writeContract: writePool,
+    error: poolError,
+    isPending: poolPending,
+    isSuccess: poolSuccess,
+  } = useWriteContract();
+  console.log("tokenSuccess: ", tokenSuccess);
+  console.log("poolSuccess: ", poolSuccess);
 
-  const supply = () => {
-    //
+  const needApprove = !allowance || allowance < parseUnits(amount + "", dec);
+  const err = tokenError || poolError;
+  const loading = tokenPending || poolPending;
+
+  const supply = async () => {
+    const supplyVal = parseUnits(`${amount}`, dec);
+    if (needApprove) {
+      await writeERC20({
+        address: usdcContract,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [poolContract, supplyVal],
+      });
+    } else {
+      await writePool({
+        address: poolContract,
+        abi: POOL_ABI,
+        functionName: "supply",
+        args: [usdcContract, supplyVal, address, 0],
+      });
+    }
   };
+
+  useEffect(() => {
+    if (err) {
+      api.error({
+        message: "Error",
+        description: err.message,
+      });
+    }
+  }, [err]);
+  useEffect(() => {
+    if (poolSuccess) {
+      api.success({
+        message: "操作成功",
+      });
+    }
+  }, [poolSuccess]);
 
   return (
     <div>
       {contextHolder}
-      <p>输入要抵押的 USDC 数量</p>
-      <input
-        value={amount}
-        onChange={(e) => setAmt(e.target.value)}
-        placeholder="100"
-      />
-      <Button onClick={supply} disabled={!amount}>
-        {needApprove ? "Approve" : "Supply"}
-      </Button>
+      <div className="mb-[16px]">
+        <InputNumber
+          className="w-[220px] mr-[10px]"
+          value={amount}
+          defaultValue={1}
+          min={1}
+          max={10000}
+          disabled={loading}
+          onChange={(val) => {
+            setAmount(val);
+          }}
+          placeholder="输入要抵押的 USDC 数量"
+        />
+        <Button onClick={supply} disabled={!amount} loading={loading}>
+          {needApprove ? "Approve" : "Supply"}
+        </Button>
+      </div>
       <p>钱包余额：{bal} </p>
     </div>
   );
