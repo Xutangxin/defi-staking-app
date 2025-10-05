@@ -37,4 +37,8 @@ contract MyUSDC is ERC20 {
         }
         lastBlock = block.number;
     }
+
+    function claimInterest() external {
+        _update(msg.sender, msg.sender, 0); // amount=0 也会触发 _update
+    }
 }
