@@ -11,6 +11,13 @@ export const ERC20_ABI = [
     stateMutability: "nonpayable",
   },
   {
+    name: "claimInterest",
+    type: "function",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
     type: "function",
     name: "approve",
     inputs: [
