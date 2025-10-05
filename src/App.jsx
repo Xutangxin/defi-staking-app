@@ -12,8 +12,8 @@ function App() {
           <h1 className="mb-[20px] text-[24px] font-bold">DeFi Staking App</h1>
           <ConnectButton />
           <Faucet />
-          <Vault />
-          {/* <Earnings /> */}
+          {/* <Vault /> */}
+          <Earnings />
         </Card>
       </div>
     </>
