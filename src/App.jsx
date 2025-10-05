@@ -2,6 +2,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Faucet from "./components/Faucet";
 import { Card } from "antd";
 import Vault from "./components/Vault";
+import Earnings from "./components/Earnings";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <ConnectButton />
           <Faucet />
           <Vault />
+          {/* <Earnings /> */}
         </Card>
       </div>
     </>

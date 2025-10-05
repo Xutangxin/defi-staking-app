@@ -6,7 +6,7 @@ import {
   useReadContract,
   useWriteContract,
 } from "wagmi";
-import { poolContract, usdcContract } from "../constants";
+import { POOL_ADDRESS, poolContract, usdcContract } from "../constants";
 import { formatUnits, parseUnits } from "viem";
 import { ERC20_ABI, POOL_ABI } from "../abi";
 import { InputNumber } from "antd";
@@ -45,25 +45,26 @@ export default function Vault() {
 
   const {
     writeContract: writeERC20,
-    error: tokenError,
     isPending: tokenPending,
-    isSuccess: tokenSuccess,
+    // isSuccess: tokenSuccess,
   } = useWriteContract();
   const {
     writeContract: writePool,
-    error: poolError,
     isPending: poolPending,
     isSuccess: poolSuccess,
   } = useWriteContract();
-  console.log("tokenSuccess: ", tokenSuccess);
-  console.log("poolSuccess: ", poolSuccess);
 
-  const needApprove = !allowance || allowance < parseUnits(amount + "", dec);
-  const err = tokenError || poolError;
+  const needApprove =
+    !allowance || (amount && allowance < parseUnits(amount + "", dec));
   const loading = tokenPending || poolPending;
+
+  // 判断用户是否已经给 Pool 授权了足够的 USDC，
+  // 如果没有就先去授权（approve），
+  // 如果已经够了就直接把币 supply 进池子。
 
   const supply = async () => {
     const supplyVal = parseUnits(`${amount}`, dec);
+
     if (needApprove) {
       await writeERC20({
         address: usdcContract,
@@ -73,7 +74,7 @@ export default function Vault() {
       });
     } else {
       await writePool({
-        address: poolContract,
+        address: POOL_ADDRESS,
         abi: POOL_ABI,
         functionName: "supply",
         args: [usdcContract, supplyVal, address, 0],
@@ -81,14 +82,6 @@ export default function Vault() {
     }
   };
 
-  useEffect(() => {
-    if (err) {
-      api.error({
-        message: "Error",
-        description: err.message,
-      });
-    }
-  }, [err]);
   useEffect(() => {
     if (poolSuccess) {
       api.success({

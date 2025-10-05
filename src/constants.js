@@ -9,3 +9,5 @@ export const POOL_ADDRESS = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951"; // Aav
 
 export const usdcContract = getAddress(USDC_ADDRESS);
 export const poolContract = getAddress(POOL_ADDRESS);
+
+export const AUSDC = "0x5bF9634a97fAdfCEDCE8fF81A293dFf0FA060ADa";
