@@ -35,6 +35,7 @@ export default function Earnings() {
   });
   const dec = bal?.decimals || 18;
   const balVal = bal?.value || 0n;
+  const sym = bal?.symbol;
 
   const { writeContract, isPending, error, isSuccess } = useWriteContract();
 
@@ -74,9 +75,10 @@ export default function Earnings() {
   }, [block]);
 
   return (
-    <div className="mt-[18px] w-fit">
+    <div className="mt-[20px] w-fit">
       {contextHolder}
       <Button
+        type="primary"
         onClick={claim}
         loading={isPending}
         disabled={!isConnected}
@@ -86,9 +88,13 @@ export default function Earnings() {
       </Button>
       <div>
         当前余额：
-        <Spin spinning={isLoading}>{formatUnits(balVal, dec)} USDC</Spin>
+        <Spin spinning={isLoading}>
+          {formatUnits(balVal, dec)} {sym}
+        </Spin>
       </div>
-      <p>预计可领利息：{interest} USDC</p>
+      <p>
+        预计可领利息：{interest} {sym}
+      </p>
     </div>
   );
 }
